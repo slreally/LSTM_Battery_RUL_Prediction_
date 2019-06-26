@@ -12,73 +12,65 @@ import codecs
 import os.path as osp
 from numpy import newaxis
 import argparse
+#
 
-
-def load_data(file_name, sequence_length=50, split=0.3):
-    df = pd.read_csv(file_name, sep=',', usecols=[3,4,5,6,7,8,9,10])
-
-    data_all = np.array(df).astype(float)
-
-    # scaler = MinMaxScaler()
-    # data_all = scaler.fit_transform(data_all)
-
-    scaler_x = MinMaxScaler()
-    data_x = scaler_x.fit_transform(data_all[:,:-1])
-    scaler_y = MinMaxScaler()
-    data_y = scaler_y.fit_transform(data_all[:,-1:])
-    data_all = np.concatenate((data_x,data_y),axis=1)
-
-    data = []
-    for i in range(len(data_all) - sequence_length + 1):
-        data.append(data_all[i: i + sequence_length - 1])
-    reshaped_data = np.array(data).astype('float64')
-    # np.random.shuffle(reshaped_data)
-    # 对x进行统一归一化，而y则不归一化
-    x = reshaped_data[:, :,:-1]
-    y = reshaped_data[:, len(reshaped_data[1])-1,-2:-1]
-    split_boundary = int(reshaped_data.shape[0] * split)
-
-    train_x = x[: split_boundary]
-    test_x = x[split_boundary:]
-
-    train_y = y[: split_boundary]
-    test_y = y[split_boundary:]
-
-    # fig = plt.figure(1)
-    # plt.plot(y)
-    # plt.show()
-
-    return data_all,y,split_boundary,train_x, train_y, test_x, test_y, scaler_x,scaler_y
+# def load_data(file_name, sequence_length=50, split=0.3):
+#     df = pd.read_csv(file_name, sep=',', usecols=[3,4,5,6,7,8,9,10])
+#
+#     data_all = np.array(df).astype(float)
+#
+#     scaler_x = MinMaxScaler()
+#     data_x = scaler_x.fit_transform(data_all[:,:-1])
+#     scaler_y = MinMaxScaler()
+#     data_y = scaler_y.fit_transform(data_all[:,-1:])
+#     data_all = np.concatenate((data_x,data_y),axis=1)
+#
+#     data = []
+#     for i in range(len(data_all) - sequence_length + 1):
+#         data.append(data_all[i: i + sequence_length - 1])
+#     reshaped_data = np.array(data).astype('float64')
+#     # np.random.shuffle(reshaped_data)
+#     # 对x进行统一归一化，而y则不归一化
+#     x = reshaped_data[:, :,:-1]
+#     y = reshaped_data[:, len(reshaped_data[1])-1,-2:-1]
+#     split_boundary = int(reshaped_data.shape[0] * split)
+#
+#     train_x = x[: split_boundary]
+#     test_x = x[split_boundary:]
+#
+#     train_y = y[: split_boundary]
+#     test_y = y[split_boundary:]
+#
+#     # fig = plt.figure(1)
+#     # plt.plot(y)
+#     # plt.show()
+#
+#     return data_all,y,split_boundary,train_x, train_y, test_x, test_y, scaler_x,scaler_y
 
 
 def build_model(seq_len,features_num,dropout_prob=0.5,units_num=50):
     # input_dim是输入的train_x的最后一个维度，train_x的维度为(n_samples, time_steps, input_dim)
     model = Sequential()
-    # model.add(LSTM(input_dim=7, output_dim=50, return_sequences=True))
     model.add(LSTM(units=units_num,return_sequences=True,input_shape=(seq_len,features_num)))
     print(model.layers)
-    model.add(Dropout(dropout_prob))
-    # model.add(LSTM(50, return_sequences=False))
+    model.add(Dropout(rate=1-dropout_prob))
     model.add(LSTM(units=units_num))
-    model.add(Dropout(dropout_prob))
+    model.add(Dropout(rate=1-dropout_prob))
     model.add(Dense(units=1))
     model.add(Activation('linear',name='LSTMActivation'))
 
     model.compile(loss='mse', optimizer='rmsprop')
-
     # model.summary()
 
     return model
 
 
-def train_model(train_x, train_y, test_x,batch_size,epochs,pre_way):
-    model = build_model(train_x.shape[1],train_x.shape[2])
+def train_model(train_x, train_y, test_x,batch_size,epochs,pre_way,dropout):
+    model = build_model(train_x.shape[1],train_x.shape[2],dropout_prob=dropout)
 
     try:
         model.fit(train_x, train_y, batch_size=batch_size,epochs=epochs, validation_split=0.1,shuffle=False,verbose=2)
-
         predict = predict_way(model,test_x,way=pre_way)
-
     except KeyboardInterrupt:
         print(predict)
 
@@ -127,19 +119,21 @@ def plot_and_save(title,sequence_length,filename,all_y,test_x,test_y,train_y,pre
     fig2 = plt.figure()
     plt.xlabel('cycle')
     plt.ylabel('QD')
-    plt.plot(range(sequence_length,sequence_length+len(all_y)),all_y)
+    # plt.plot(range(sequence_length,sequence_length+len(all_y)),all_y)
+    plt.plot(all_y)
     plt.plot(range(sequence_length,sequence_length+len(train_y),1),train_y,'m:')
     plt.plot(range(sequence_length+len(train_y),sequence_length+len(train_y)+len(predict_y),1),predict_y,'g:')
     # time = datetime.datetime.now().strftime('%m-%d-%H-%R-%S')
     plt.title(title)
     plt.legend(['ground truth','train','test','predict'])
+    plt.show()
     plt.savefig('result/'+filename+'.png')
     plt.close(fig2)
 
 '''
 mean square error
 '''
-def get_mse(test_y,predict_y):
+def get_rmse(test_y, predict_y):
     mse = math.sqrt(mean_squared_error(test_y,predict_y))
     return mse
 
@@ -153,26 +147,29 @@ def get_mape(y_true,y_predict):
 def main():
 
     parser = argparse.ArgumentParser(description='LSTM RUL Prediction')
+    parser.add_argument('--filename', type=str, default="2017_06_30_cell0_data")
+    parser.add_argument('--output_path',type=str,default="snapshot/multi_variable")
     parser.add_argument('--predict_measure', type=int, default=0, choices=[0,1])
     parser.add_argument('--sequence_length', type=int,default=20)
     parser.add_argument('--split', default=0.5, help='split of train and test set')
-    parser.add_argument('--batch_size', type=int, default=8,
+    parser.add_argument('--batch_size', type=int, default=16,
                         help='input batch size for training (default: 8)')
-    parser.add_argument('--epochs', type=int, default=10, metavar='N',
+    parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--dropout', default=0.5)
 
     args = parser.parse_args()
 
     split = args.split
+    dropout = args.dropout
     sequence_length = args.sequence_length
     batch_size = args.batch_size
     epochs = args.epochs
     predict_measure = args.predict_measure  # 0 for predicting one cycle,1 for predicting len(test(y)) cycles continuely, use current predicted value as the next input.
-    filename = '2017_06_30_cell0_data'
-
-    output_path = "snapshot/multi_variable"
+    filename = args.filename
+    output_path = args.output_path
     file_error = 'seqlen:'+str(sequence_length)+'_mse_mape'+str(datetime.datetime.utcnow())+'.txt'
+
     fo = open(osp.join(output_path,file_error),'w')
     fo.write(str('N,batch_size,epochs,mse,mape\n'))
     fo.flush()
@@ -180,33 +177,36 @@ def main():
     batch_size_list = [8,16,32,64,128]
     epochs_list =[30,50,75,100,150,200]
 
+    # data_all, all_y, split_boundary, train_x, train_y, test_x, test_y, scaler_x, scaler_y = load_data(filename + '.csv',
+    #     split=split, sequence_length=sequence_length)
+
+    import load_data
     for batch_size in batch_size_list:
         for epochs in epochs_list:
-            data_all, all_y, split_boundary, train_x, train_y, test_x, test_y, scaler_x, scaler_y = load_data(
-                filename + '.csv', split=split, sequence_length=sequence_length)
+            dataloader = load_data.load_data(filename + ".csv", sequence_length, split)
+            train_x, train_y, test_x, test_y = dataloader.get_x_y()
+            all_y = dataloader.get_all_y()
+
             train_x = np.reshape(train_x, (train_x.shape[0], train_x.shape[1], 7))
             test_x = np.reshape(test_x, (test_x.shape[0], test_x.shape[1], 7))
             print(train_y.shape)
-            predict_y = train_model(train_x, train_y, test_x, batch_size, epochs, predict_measure)
+            predict_y = train_model(train_x, train_y, test_x, batch_size, epochs, predict_measure,dropout)
 
-            mse = get_mse(test_y, predict_y)
+            mse = get_rmse(test_y, predict_y)
             mape = get_mape(test_y, predict_y)
 
             err_str = '{0},{1},{2},{3},{4}\n'.format(sequence_length, batch_size, epochs, mse, mape)
             fo.write(str(err_str))
             fo.flush()
 
-            all_y = scaler_y.inverse_transform(all_y)
-            train_y = scaler_y.inverse_transform(train_y)
-            test_y = scaler_y.inverse_transform(test_y)
-            predict_y = scaler_y.inverse_transform(predict_y)
+            # all_y = scaler_y.inverse_transform(all_y)
+            # train_y = scaler_y.inverse_transform(train_y)
+            # test_y = scaler_y.inverse_transform(test_y)
+            # predict_y = scaler_y.inverse_transform(predict_y)
 
-            # print(len(test_y))
-            # print(len(train_y))
-            # print(len(predict_y))
-
-            plotfilename = 'seqLen:{0}_batchsize:{1}_epochs:{2}_predictmeasure:{3}'.format(sequence_length,batch_size, epochs,predict_measure)
-            title = plotfilename+'\nmse:{0}_mape:{1}'.format(mse, mape)
+            plotfilename = 'seqLen:{0}_batchsize:{1}_epochs:{2}_predictmeasure:{3}_dropout:{4}'.format(sequence_length, batch_size,
+                                                                                           epochs, predict_measure,dropout)
+            title = plotfilename + '\nmse:{0}_mape:{1}'.format(mse, mape)
             plot_and_save(title, sequence_length, plotfilename, all_y, test_x, test_y, train_y, predict_y)
 
     fo.close()

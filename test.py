@@ -6,12 +6,19 @@ import pandas as pd
 import keras
 from sklearn.preprocessing import MinMaxScaler
 
-with open("lstm.sh",'w') as f :
-    for i in range(11,101):
-        sh_str = "python lstm_predict.py --sequence_length " + str(i)
-        f.write(sh_str)
-        f.write("\n")
-        f.flush()
+
+
+
+# a=[[[1, 2, 3, 0],[4, 5, 6, 0]],[[1,1,1,1],[2,2,2,2]]]
+# print(np.mean(a))
+# print(np.std(a))
+
+# with open("lstm_pre.sh",'w') as f :
+#     for i in range(11,101):
+#         sh_str = "python lstm_predict.py --sequence_length " + str(i)
+#         f.write(sh_str)
+#         f.write("\n")
+#         f.flush()
 
 #
 

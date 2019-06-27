@@ -15,13 +15,13 @@ import argparse
 import lstm_multi_variable as lstm
 
 class load_data():
-    def __init__(self,filename,seq_len=50,split=0.3):
+    def __init__(self,filename,seq_len=50,split=0.3,usecols =[3, 4, 5, 6, 7, 8, 9, 10]):
         self.file_name = filename
         self.sequence_length = seq_len
         self.split = split
         self.scaler_x = MinMaxScaler()
         self.scaler_y = MinMaxScaler()
-        self.df = pd.read_csv(self.file_name, sep=',', usecols=[3, 4, 5, 6, 7, 8, 9, 10])
+        self.df = pd.read_csv(self.file_name, sep=',', usecols=usecols)
         self.data_all = np.array(self.df).astype(float)
 
     def get_x_y(self):
@@ -59,15 +59,15 @@ class load_data():
 
     def scaler_train_data(self,data):
         data_x = self.scaler_x.fit_transform(data[:, :-1])
-        # data_y = self.scaler_y.fit_transform(data[:, -1:]) #label不归一化
-        data_y =data[:,-1:]
+        data_y = self.scaler_y.fit_transform(data[:, -1:]) #label不归一化
+        # data_y =data[:,-1:]
         data_all = np.concatenate((data_x, data_y), axis=1)
         return data_all
 
     def scaler_test_data(self,data_test):
         data_x = self.scaler_x.transform(data_test[:,:-1])
-        # data_y = self.scaler_y.transform(data_test[:,-1:])
-        data_y = data_test[:, -1:]
+        data_y = self.scaler_y.transform(data_test[:,-1:])
+        # data_y = data_test[:, -1:]
         data_all = np.concatenate((data_x,data_y),axis=1)
         return data_all
 

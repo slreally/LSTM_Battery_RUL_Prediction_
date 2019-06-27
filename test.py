@@ -13,12 +13,13 @@ from sklearn.preprocessing import MinMaxScaler
 # print(np.mean(a))
 # print(np.std(a))
 
-# with open("lstm_pre.sh",'w') as f :
-#     for i in range(11,101):
-#         sh_str = "python lstm_predict.py --sequence_length " + str(i)
-#         f.write(sh_str)
-#         f.write("\n")
-#         f.flush()
+with open("lstm_single.sh",'w') as f :
+    for i in range(2,101):
+        for epochs in [50,75,100,150,200]:
+            sh_str = "python lstm_single_variable.py --sequence_length " + str(i)+" --epochs "+str(epochs)
+            f.write(sh_str)
+            f.write("\n")
+            f.flush()
 
 #
 

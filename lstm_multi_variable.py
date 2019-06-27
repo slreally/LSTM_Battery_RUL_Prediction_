@@ -175,7 +175,7 @@ def main():
     fo.write(str('N,batch_size,epochs,mse,mape\n'))
     fo.flush()
 
-    batch_size_list = [8,16,32,64,128]
+    batch_size_list = [1,8,16,32,64,128]
     epochs_list = [50,75,100,150,200]
 
     import load_data

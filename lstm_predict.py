@@ -35,7 +35,7 @@ def load_data(file_name, sequence_length=50, split=0.3):
     # np.random.shuffle(reshaped_data)
     # 对x进行统一归一化，而y则不归一化
     x = reshaped_data[:, :,:-1]
-    y = reshaped_data[:, len(reshaped_data[1])-1,-2:-1]
+    y = reshaped_data[:, len(reshaped_data[1])-1,-1:]
     split_boundary = int(reshaped_data.shape[0] * split)
 
     train_x = x[: split_boundary]

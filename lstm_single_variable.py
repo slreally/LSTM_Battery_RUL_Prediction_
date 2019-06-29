@@ -14,38 +14,38 @@ from numpy import newaxis
 import argparse
 
 
-def load_data(file_name, sequence_length=50, split=0.3):
-    df = pd.read_csv(file_name, sep=',', usecols=[9,10])
-
-    data_all = np.array(df).astype(float)
-
-    scaler_x = MinMaxScaler()
-    data_x = scaler_x.fit_transform(data_all[:,:-1])
-    # scaler_y = MinMaxScaler()
-    # data_y = scaler_y.fit_transform(data_all[:,-1:])
-    data_all = np.concatenate((data_x,data_all[:,-1:]),axis=1)
-
-    data = []
-    for i in range(len(data_all) - sequence_length + 1):
-        data.append(data_all[i: i + sequence_length])
-    reshaped_data = np.array(data).astype('float64')
-    # np.random.shuffle(reshaped_data)
-    # 对x进行统一归一化，而y则不归一化
-    x = reshaped_data[:, :,:-1]
-    y = reshaped_data[:, len(reshaped_data[1])-1,-1:]
-    split_boundary = int(reshaped_data.shape[0] * split)
-
-    train_x = x[: split_boundary]
-    test_x = x[split_boundary:]
-
-    train_y = y[: split_boundary]
-    test_y = y[split_boundary:]
-
-    # fig = plt.figure(1)
-    # plt.plot(y)
-    # plt.show()
-
-    return data_all,y,split_boundary,train_x, train_y, test_x, test_y, scaler_x#,scaler_y
+# def load_data(file_name, sequence_length=50, split=0.3):
+#     df = pd.read_csv(file_name, sep=',', usecols=[9,10])
+#
+#     data_all = np.array(df).astype(float)
+#
+#     scaler_x = MinMaxScaler()
+#     data_x = scaler_x.fit_transform(data_all[:,:-1])
+#     # scaler_y = MinMaxScaler()
+#     # data_y = scaler_y.fit_transform(data_all[:,-1:])
+#     data_all = np.concatenate((data_x,data_all[:,-1:]),axis=1)
+#
+#     data = []
+#     for i in range(len(data_all) - sequence_length + 1):
+#         data.append(data_all[i: i + sequence_length])
+#     reshaped_data = np.array(data).astype('float64')
+#     # np.random.shuffle(reshaped_data)
+#     # 对x进行统一归一化，而y则不归一化
+#     x = reshaped_data[:, :,:-1]
+#     y = reshaped_data[:, len(reshaped_data[1])-1,-1:]
+#     split_boundary = int(reshaped_data.shape[0] * split)
+#
+#     train_x = x[: split_boundary]
+#     test_x = x[split_boundary:]
+#
+#     train_y = y[: split_boundary]
+#     test_y = y[split_boundary:]
+#
+#     # fig = plt.figure(1)
+#     # plt.plot(y)
+#     # plt.show()
+#
+#     return data_all,y,split_boundary,train_x, train_y, test_x, test_y, scaler_x#,scaler_y
 
 
 def build_model(seq_len,features_num,dropout_prob=0.2,units_num=50):
@@ -196,17 +196,13 @@ def main():
         train_y = sca_y.inverse_transform(train_y)
         test_y = sca_y.inverse_transform(test_y)
         predict_y = sca_y.inverse_transform(predict_y)
+
         mse = get_rmse(test_y, predict_y)
         mape = get_mape(test_y, predict_y)
 
         err_str = '{0},{1},{2},{3},{4}\n'.format(sequence_length, batch_size, epochs, mse, mape)
         fo.write(str(err_str))
         fo.flush()
-
-        # all_y = scaler_y.inverse_transform(all_y)
-        # train_y = scaler_y.inverse_transform(train_y)
-        # test_y = scaler_y.inverse_transform(test_y)
-        # predict_y = scaler_y.inverse_transform(predict_y)
 
         plotfilename = 'seqLen:{0}_batchsize:{1}_epochs:{2}_preMeasure:{3}_dropout:{4}'.format(sequence_length,
                                                                                                batch_size, epochs,

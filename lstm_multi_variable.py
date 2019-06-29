@@ -124,10 +124,11 @@ def plot_and_save(title,sequence_length,filename,all_y,test_x,test_y,train_y,pre
     plt.plot(range(sequence_length,sequence_length+len(train_y),1),train_y,'m:')
     plt.plot(range(sequence_length+len(train_y),sequence_length+len(train_y)+len(test_y),1),test_y,'r:')
     plt.plot(range(sequence_length+len(train_y),sequence_length+len(train_y)+len(predict_y),1),predict_y,'g-')
-    # time = datetime.datetime.now().strftime('%m-%d-%H-%R-%S')
+    time = datetime.datetime.now().strftime('%m-%d-%H-%R-%S')
     plt.title(title)
     plt.legend(['ground truth','train','test','predict'])
     # plt.show()
+    filename=filename+str(time)
     plt.savefig('result/multi_variable/'+filename+'.png')
     plt.close(fig2)
 
@@ -155,7 +156,7 @@ def main():
     parser.add_argument('--split', default=0.5, help='split of train and test set')
     parser.add_argument('--batch_size', type=int, default=32,
                         help='input batch size for training (default: 8)')
-    parser.add_argument('--epochs', type=int, default=100, metavar='N',
+    parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--dropout', default=0.2)
 
@@ -176,7 +177,7 @@ def main():
     fo.flush()
 
     batch_size_list = [1,8,16,32,64,128]
-    epochs_list = [50,75,100,150,200]
+    epochs_list = [50,75,100,150,200,300]
 
     import load_data
     for batch_size in batch_size_list:
@@ -186,8 +187,13 @@ def main():
 
         train_x = np.reshape(train_x, (train_x.shape[0], train_x.shape[1], 7))
         test_x = np.reshape(test_x, (test_x.shape[0], test_x.shape[1], 7))
-        print(train_y.shape)
+        # print(train_y.shape)
         predict_y = train_model(train_x, train_y, test_x, batch_size, epochs, predict_measure, dropout)
+
+        sca_x,sca_y = dataloader.get_scaler_x_y()
+        train_y = sca_y.inverse_transform(train_y)
+        test_y = sca_y.inverse_transform(test_y)
+        predict_y = sca_y.inverse_transform(predict_y)
 
         mse = get_rmse(test_y, predict_y)
         mape = get_mape(test_y, predict_y)
@@ -195,11 +201,6 @@ def main():
         err_str = '{0},{1},{2},{3},{4}\n'.format(sequence_length, batch_size, epochs, mse, mape)
         fo.write(str(err_str))
         fo.flush()
-
-        # all_y = scaler_y.inverse_transform(all_y)
-        # train_y = scaler_y.inverse_transform(train_y)
-        # test_y = scaler_y.inverse_transform(test_y)
-        # predict_y = scaler_y.inverse_transform(predict_y)
 
         plotfilename = 'seqLen:{0}_batchsize:{1}_epochs:{2}_preMeasure:{3}_dropout:{4}'.format(sequence_length,
                                                                                                batch_size, epochs,

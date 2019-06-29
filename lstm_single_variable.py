@@ -128,7 +128,7 @@ def plot_and_save(title,sequence_length,filename,all_y,test_x,test_y,train_y,pre
     plt.title(title)
     plt.legend(['ground truth','train','test','predict'])
     # plt.show()
-    filename =filename+str(time)
+    filename =filename+"_"+str(time)
     plt.savefig('result/single_variable/'+filename+'.png')
     plt.close(fig2)
 
@@ -151,7 +151,7 @@ def main():
     parser = argparse.ArgumentParser(description='LSTM RUL Prediction')
     parser.add_argument('--filename', type=str, default="2017_06_30_cell0_data")
     parser.add_argument('--output_path',type=str,default="snapshot/single_variable")
-    parser.add_argument('--predict_measure', type=int, default=0, choices=[0,1])
+    parser.add_argument('--predict_measure', type=int, default=1, choices=[0,1])
     parser.add_argument('--sequence_length', type=int,default=9)
     parser.add_argument('--split', default=0.5, help='split of train and test set')
     parser.add_argument('--batch_size', type=int, default=32,

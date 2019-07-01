@@ -14,8 +14,8 @@ from numpy import newaxis
 import argparse
 import lstm_multi_variable as lstm
 
-class load_data():
-    def __init__(self,filename,seq_len=50,split=0.3,usecols =[3, 4, 5, 6, 7, 8, 9, 10]):
+class load_cells_data():
+    def __init__(self,filename,seq_len,split,usecols =[0,1]):
         self.file_name = filename
         self.sequence_length = seq_len
         self.split = split
@@ -25,13 +25,8 @@ class load_data():
         self.data_all = np.array(self.df).astype(float)
 
     def get_x_y(self):
-        num_train =int(len(self.data_all)*self.split)
-        num_test =int(len(self.data_all) - num_train)
-        train = self.data_all[:num_train,:]
-        test = self.data_all[num_train-self.sequence_length+1:,:]
-        train_x,train_y =self.get_train_x_y(train)
-        test_x,test_y =self.get_test_x_y(test)
-        return train_x,train_y,test_x,test_y
+        train_x,train_y =self.get_train_x_y(self.data_all)
+        return train_x,train_y
 
     def get_train_x_y(self, data_train):
         data_scalered = self.scaler_train_data(data_train)
@@ -81,26 +76,8 @@ class load_data():
 
 
 def main():
-    dataloader =load_data("2017_06_30_cell0_data.csv",20,0.5)
-    train_x,train_y,test_x,test_y = dataloader.get_x_y()
-    scaler_x,scaler_y = dataloader.get_scaler_x_y()
+    dataloader =load_cells_data("2017_06_30_cell0_data.csv",20,0.5)
 
-    train_x = np.reshape(train_x, (train_x.shape[0], train_x.shape[1], 7))
-    test_x = np.reshape(test_x, (test_x.shape[0], test_x.shape[1], 7))
-    predict_y =lstm.train_model(train_x,train_y,test_x,batch_size=16,epochs=50,pre_way=0)
-    # mse = lstm.get_mse(test_y, predict_y)
-    # mape = lstm.get_mape(test_y, predict_y)
-    # print("scaled_mse= %0.3f" % mse)
-    # print("scaled_mape= %0.3f%%"% mape)
-
-    # test_y = scaler_y.inverse_transform(test_y)
-    # predict_y = scaler_y.inverse_transform(predict_y)
-    mse = lstm.get_rmse(test_y, predict_y)
-    mape = lstm.get_mape(test_y, predict_y)
-    print("mse= %0.3f" % mse)
-    print("mape= %0.3f%%" % mape)
-    print("len train_x: " + str(len(train_x)))
-    print("len test_x: "+str(len(test_x)))
 
 if __name__ == '__main__':
     main()

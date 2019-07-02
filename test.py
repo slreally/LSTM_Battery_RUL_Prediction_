@@ -7,19 +7,21 @@ import keras
 from sklearn.preprocessing import MinMaxScaler
 
 
+a = np.zeros((8,))
+print(a)
 
 
 # a=[[[1, 2, 3, 0],[4, 5, 6, 0]],[[1,1,1,1],[2,2,2,2]]]
 # print(np.mean(a))
 # print(np.std(a))
 
-with open("lstm_multi.sh",'w') as f :
-    for i in range(2,101):
-        for epochs in [50,75,100,150,200,300]:
-            sh_str = "python lstm_multi_variable.py --sequence_length " + str(i)+" --epochs "+str(epochs)
-            f.write(sh_str)
-            f.write("\n")
-            f.flush()
+# with open("lstm_multi.sh",'w') as f :
+#     for i in range(2,101):
+#         for epochs in [50,75,100,150,200,300]:
+#             sh_str = "python lstm_multi_variable.py --sequence_length " + str(i)+" --epochs "+str(epochs)
+#             f.write(sh_str)
+#             f.write("\n")
+#             f.flush()
 
 #
 

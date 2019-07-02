@@ -54,7 +54,7 @@ def main():
     parser.add_argument('--filename', type=str, default="cells_single_input")
     parser.add_argument('--output_path',type=str,default="snapshot/multi_variable")
     parser.add_argument('--predict_measure', type=int, default=0, choices=[0,1])
-    parser.add_argument('--sequence_length', type=int,default=50)
+    parser.add_argument('--sequence_length', type=int,default=20)
     parser.add_argument('--split', default=0.5, help='split of train and test set')
     parser.add_argument('--batch_size', type=int, default=128,
                         help='input batch size for training (default: 8)')

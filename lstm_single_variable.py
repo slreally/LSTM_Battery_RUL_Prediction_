@@ -72,7 +72,7 @@ def train_model(train_x, train_y, test_x,test_y,batch_size,epochs,pre_way,dropou
 
     try:
 
-        model.fit(train_x, train_y, batch_size=batch_size,epochs=epochs, validation_split=0.1,shuffle=True,verbose=1)
+        # model.fit(train_x, train_y, batch_size=batch_size,epochs=epochs, validation_split=0.1,shuffle=True,verbose=1)
         predict = predict_way(model,test_x,way=pre_way)
 
     except KeyboardInterrupt:
@@ -164,11 +164,11 @@ def get_mape(y_true,y_predict):
 def main():
 
     parser = argparse.ArgumentParser(description='LSTM RUL Prediction')
-    parser.add_argument('--filename', type=str, default="data/2017_06_30_cell10_data")
+    parser.add_argument('--filename', type=str, default="data/2017_06_30_cell13_data")
     parser.add_argument('--output_path',type=str,default="snapshot/single_variable")
     parser.add_argument('--predict_measure', type=int, default=0, choices=[0,1])
-    parser.add_argument('--sequence_length', type=int,default=50)
-    parser.add_argument('--split', default=0.5, help='split of train and test set')
+    parser.add_argument('--sequence_length', type=int,default=20)
+    parser.add_argument('--split', default=0.3, help='split of train and test set')
     parser.add_argument('--batch_size', type=int, default=32,
                         help='input batch size for training (default: 8)')
     parser.add_argument('--epochs', type=int, default=50, metavar='N',

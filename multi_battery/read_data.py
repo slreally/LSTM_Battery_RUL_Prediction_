@@ -12,9 +12,9 @@ import numpy as np
 #读取多个电池生命周期数据，集合到一个csv文件中，用于训练
 def main():
     filename = "../data/2017_06_30_cell"#0_data
-    usecols = [9, 10]
-    data=[0,0]
-    for i in range(0,10):
+    usecols = [0,3,4,5,6,7,8,9,10]
+    data=np.zeros((9,))
+    for i in range(0,31):
         filename_curr =filename+str(i)+"_data.csv"
         df = pd.read_csv(filename_curr,sep=',',usecols=usecols)
         data_curr=np.array(df).astype(float)
@@ -24,8 +24,8 @@ def main():
 
     print(data.shape)
     data = data[1:,:]
-    data = pd.DataFrame(columns=['capacity','label'],data=data)
-    data.to_csv('cells_single_input.csv',index=False)
+    data = pd.DataFrame(columns=['cell','cycle','IR','Tavg','Tmin','Tmax','chargetime','capacity','label'],data=data)
+    data.to_csv('cells_multi_input.csv',index=False)
 
 
 if __name__ == '__main__':

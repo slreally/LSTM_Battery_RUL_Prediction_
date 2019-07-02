@@ -15,40 +15,6 @@ import argparse
 from keras.models import model_from_json
 
 
-# def load_data(file_name, sequence_length=50, split=0.3):
-#     df = pd.read_csv(file_name, sep=',', usecols=[9,10])
-#
-#     data_all = np.array(df).astype(float)
-#
-#     scaler_x = MinMaxScaler()
-#     data_x = scaler_x.fit_transform(data_all[:,:-1])
-#     # scaler_y = MinMaxScaler()
-#     # data_y = scaler_y.fit_transform(data_all[:,-1:])
-#     data_all = np.concatenate((data_x,data_all[:,-1:]),axis=1)
-#
-#     data = []
-#     for i in range(len(data_all) - sequence_length + 1):
-#         data.append(data_all[i: i + sequence_length])
-#     reshaped_data = np.array(data).astype('float64')
-#     # np.random.shuffle(reshaped_data)
-#     # 对x进行统一归一化，而y则不归一化
-#     x = reshaped_data[:, :,:-1]
-#     y = reshaped_data[:, len(reshaped_data[1])-1,-1:]
-#     split_boundary = int(reshaped_data.shape[0] * split)
-#
-#     train_x = x[: split_boundary]
-#     test_x = x[split_boundary:]
-#
-#     train_y = y[: split_boundary]
-#     test_y = y[split_boundary:]
-#
-#     # fig = plt.figure(1)
-#     # plt.plot(y)
-#     # plt.show()
-#
-#     return data_all,y,split_boundary,train_x, train_y, test_x, test_y, scaler_x#,scaler_y
-
-
 def build_model(seq_len,features_num,dropout_prob=0.2,units_num=50):
     # input_dim是输入的train_x的最后一个维度，train_x的维度为(n_samples, time_steps, input_dim)
     model = Sequential()
@@ -67,12 +33,12 @@ def build_model(seq_len,features_num,dropout_prob=0.2,units_num=50):
 
 
 def train_model(train_x, train_y, test_x,test_y,batch_size,epochs,pre_way,dropout):
-    # model = build_model(train_x.shape[1],train_x.shape[2],dropout_prob=dropout)
-    model = load_model()
+    model = build_model(train_x.shape[1],train_x.shape[2],dropout_prob=dropout)
+    # model = load_model()
 
     try:
 
-        # model.fit(train_x, train_y, batch_size=batch_size,epochs=epochs, validation_split=0.1,shuffle=True,verbose=1)
+        model.fit(train_x, train_y, batch_size=batch_size,epochs=epochs, validation_split=0.1,shuffle=True,verbose=1)
         predict = predict_way(model,test_x,way=pre_way)
 
     except KeyboardInterrupt:
@@ -80,21 +46,22 @@ def train_model(train_x, train_y, test_x,test_y,batch_size,epochs,pre_way,dropou
 
     return predict
 
-'''
-way = one_cycle:predict one cycle.
-else:predict len(test_x) cycles.use previous prediction value as current input x.
-'''
+
 
 def load_model():
-    json_file = open('multi_battery/batch_size:128_epochs:50_premeas:0.json', 'r')
+    json_file = open('multi_battery/batch_size:32_epochs:50_premeas:0.json', 'r')
     loaded_model_json = json_file.read()
     json_file.close()
     loaded_model = model_from_json(loaded_model_json)
-    loaded_model.load_weights('multi_battery/batch_size:128_epochs:50_premeas:0.h5')
+    loaded_model.load_weights('multi_battery/batch_size:32_epochs:50_premeas:0.h5')
     print('loaded model from disk')
     loaded_model.compile(loss='mse', optimizer='rmsprop')
     return loaded_model
 
+'''
+way = one_cycle:predict one cycle.
+else:predict len(test_x) cycles.use previous prediction value as current input x.
+'''
 def predict_way(model, predict_data, way=0):
     if way == 0:
         predict = model.predict(predict_data)
@@ -164,14 +131,14 @@ def get_mape(y_true,y_predict):
 def main():
 
     parser = argparse.ArgumentParser(description='LSTM RUL Prediction')
-    parser.add_argument('--filename', type=str, default="data/2017_06_30_cell13_data")
+    parser.add_argument('--filename', type=str, default="data/2017_06_30_cell0_data")
     parser.add_argument('--output_path',type=str,default="snapshot/single_variable")
     parser.add_argument('--predict_measure', type=int, default=0, choices=[0,1])
-    parser.add_argument('--sequence_length', type=int,default=20)
-    parser.add_argument('--split', default=0.3, help='split of train and test set')
+    parser.add_argument('--sequence_length', type=int,default=54)
+    parser.add_argument('--split', default=0.5, help='split of train and test set')
     parser.add_argument('--batch_size', type=int, default=32,
                         help='input batch size for training (default: 8)')
-    parser.add_argument('--epochs', type=int, default=50, metavar='N',
+    parser.add_argument('--epochs', type=int, default=200, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--dropout', default=0.2)
 

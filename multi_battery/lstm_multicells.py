@@ -24,7 +24,7 @@ def build_model(seq_len,features_num,dropout_prob=0.5,units_num=50):
     model.add(Dense(units=1))
     model.add(Activation('linear',name='LSTMActivation'))
 
-    model.compile(loss='mse', optimizer='rmsprop',metrics=['mae','acc'])
+    model.compile(loss='mse', optimizer='rmsprop')
     model.summary()
 
     return model
@@ -37,8 +37,8 @@ def train_model(train_x, train_y, batch_size,epochs,pre_way,dropout):
         model.fit(train_x, train_y, batch_size=batch_size,epochs=epochs, validation_split=0.1,shuffle=False,verbose=1)
         scores = model.evaluate(train_x,train_y,verbose=1)
         # print('{0} = {1}'.format(model.metrics_names[1],scores[1]))
-        for x in range(len(model.metrics_names)):
-            print('{0} = {1}'.format(model.metrics_names[x], scores[x]))
+        # for x in range(len(model.metrics_names)):
+        #     print('{0} = {1}'.format(model.metrics_names[x], scores[x]))
 
         model_path = 'batch_size:{0}_epochs:{1}_premeas:{2}'.format(str(batch_size), str(epochs), str(pre_way))
         model_json = model.to_json()
@@ -55,8 +55,8 @@ def main():
     parser.add_argument('--output_path',type=str,default="snapshot/multi_variable")
     parser.add_argument('--predict_measure', type=int, default=0, choices=[0,1])
     parser.add_argument('--sequence_length', type=int,default=20)
-    parser.add_argument('--split', default=0.5, help='split of train and test set')
-    parser.add_argument('--batch_size', type=int, default=128,
+    parser.add_argument('--split', default=0.2, help='split of train and test set')
+    parser.add_argument('--batch_size', type=int, default=32,
                         help='input batch size for training (default: 8)')
     parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 10)')
@@ -72,13 +72,15 @@ def main():
     predict_measure = args.predict_measure  # 0 for predicting one cycle,1 for predicting len(test(y)) cycles continuely, use current predicted value as the next input.
     filename = args.filename
 
+    feature_num = 1
+
 
     import multi_battery.load_cells_data as load_data
 
-    dataloader = load_data.load_cells_data(filename + ".csv", sequence_length, split)
+    dataloader = load_data.load_cells_data(filename + ".csv", sequence_length, split,usecols=[0,1])
     train_x, train_y = dataloader.get_x_y()
 
-    train_x = np.reshape(train_x, (train_x.shape[0], train_x.shape[1], 1))
+    train_x = np.reshape(train_x, (train_x.shape[0], train_x.shape[1], feature_num))
 
     train_model(train_x, train_y, batch_size, epochs, predict_measure, dropout)
 

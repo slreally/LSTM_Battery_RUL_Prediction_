@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler,MinMaxScaler
 from sklearn.metrics import mean_squared_error
-from keras.models import Sequential
+from keras.models import Sequential,model_from_json
 from keras.layers import LSTM, Dense, Activation,Dropout,Flatten
 import datetime
 import random
@@ -13,39 +13,6 @@ import os.path as osp
 from numpy import newaxis
 import argparse
 #
-
-# def load_data(file_name, sequence_length=50, split=0.3):
-#     df = pd.read_csv(file_name, sep=',', usecols=[3,4,5,6,7,8,9,10])
-#
-#     data_all = np.array(df).astype(float)
-#
-#     scaler_x = MinMaxScaler()
-#     data_x = scaler_x.fit_transform(data_all[:,:-1])
-#     scaler_y = MinMaxScaler()
-#     data_y = scaler_y.fit_transform(data_all[:,-1:])
-#     data_all = np.concatenate((data_x,data_y),axis=1)
-#
-#     data = []
-#     for i in range(len(data_all) - sequence_length + 1):
-#         data.append(data_all[i: i + sequence_length - 1])
-#     reshaped_data = np.array(data).astype('float64')
-#     # np.random.shuffle(reshaped_data)
-#     # 对x进行统一归一化，而y则不归一化
-#     x = reshaped_data[:, :,:-1]
-#     y = reshaped_data[:, len(reshaped_data[1])-1,-2:-1]
-#     split_boundary = int(reshaped_data.shape[0] * split)
-#
-#     train_x = x[: split_boundary]
-#     test_x = x[split_boundary:]
-#
-#     train_y = y[: split_boundary]
-#     test_y = y[split_boundary:]
-#
-#     # fig = plt.figure(1)
-#     # plt.plot(y)
-#     # plt.show()
-#
-#     return data_all,y,split_boundary,train_x, train_y, test_x, test_y, scaler_x,scaler_y
 
 
 def build_model(seq_len,features_num,dropout_prob=0.5,units_num=50):
@@ -64,9 +31,19 @@ def build_model(seq_len,features_num,dropout_prob=0.5,units_num=50):
 
     return model
 
+def load_model():
+    json_file = open('multi_battery/batch_size:128_epochs:50_premeas:0.json', 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    loaded_model = model_from_json(loaded_model_json)
+    loaded_model.load_weights('multi_battery/batch_size:128_epochs:50_premeas:0.h5')
+    print('loaded model from disk')
+    loaded_model.compile(loss='mse', optimizer='rmsprop')
+    return loaded_model
 
 def train_model(train_x, train_y, test_x,batch_size,epochs,pre_way,dropout):
     model = build_model(train_x.shape[1],train_x.shape[2],dropout_prob=dropout)
+    # model = load_model()
 
     try:
         model.fit(train_x, train_y, batch_size=batch_size,epochs=epochs, validation_split=0.1,shuffle=False,verbose=2)
@@ -127,7 +104,7 @@ def plot_and_save(title,sequence_length,filename,all_y,test_x,test_y,train_y,pre
     time = datetime.datetime.now().strftime('%m-%d-%H-%R-%S')
     plt.title(title)
     plt.legend(['ground truth','train','test','predict'])
-    # plt.show()
+    plt.show()
     filename=filename+str(time)
     plt.savefig('result/multi_variable/'+filename+'.png')
     plt.close(fig2)
@@ -149,10 +126,10 @@ def get_mape(y_true,y_predict):
 def main():
 
     parser = argparse.ArgumentParser(description='LSTM RUL Prediction')
-    parser.add_argument('--filename', type=str, default="2017_06_30_cell0_data")
+    parser.add_argument('--filename', type=str, default="data/2017_06_30_cell0_data")
     parser.add_argument('--output_path',type=str,default="snapshot/multi_variable")
     parser.add_argument('--predict_measure', type=int, default=0, choices=[0,1])
-    parser.add_argument('--sequence_length', type=int,default=9)
+    parser.add_argument('--sequence_length', type=int,default=20)
     parser.add_argument('--split', default=0.5, help='split of train and test set')
     parser.add_argument('--batch_size', type=int, default=32,
                         help='input batch size for training (default: 8)')
@@ -170,6 +147,7 @@ def main():
     predict_measure = args.predict_measure  # 0 for predicting one cycle,1 for predicting len(test(y)) cycles continuely, use current predicted value as the next input.
     filename = args.filename
     output_path = args.output_path
+    feature_num = 7
     file_error = 'seqlen:'+str(sequence_length)+'_mse_mape'+str(datetime.datetime.utcnow())+'.txt'
 
     fo = open(osp.join(output_path,file_error),'w')
@@ -180,33 +158,33 @@ def main():
     epochs_list = [50,75,100,150,200,300]
 
     import load_data
-    for batch_size in batch_size_list:
-        dataloader = load_data.load_data(filename + ".csv", sequence_length, split)
-        train_x, train_y, test_x, test_y = dataloader.get_x_y()
-        all_y = dataloader.get_all_y()
 
-        train_x = np.reshape(train_x, (train_x.shape[0], train_x.shape[1], 7))
-        test_x = np.reshape(test_x, (test_x.shape[0], test_x.shape[1], 7))
-        # print(train_y.shape)
-        predict_y = train_model(train_x, train_y, test_x, batch_size, epochs, predict_measure, dropout)
+    dataloader = load_data.load_data(filename + ".csv", sequence_length, split)
+    train_x, train_y, test_x, test_y = dataloader.get_x_y()
+    all_y = dataloader.get_all_y()
 
-        sca_x,sca_y = dataloader.get_scaler_x_y()
-        train_y = sca_y.inverse_transform(train_y)
-        test_y = sca_y.inverse_transform(test_y)
-        predict_y = sca_y.inverse_transform(predict_y)
+    train_x = np.reshape(train_x, (train_x.shape[0], train_x.shape[1], feature_num))
+    test_x = np.reshape(test_x, (test_x.shape[0], test_x.shape[1], feature_num))
+    # print(train_y.shape)
+    predict_y = train_model(train_x, train_y, test_x, batch_size, epochs, predict_measure, dropout)
 
-        mse = get_rmse(test_y, predict_y)
-        mape = get_mape(test_y, predict_y)
+    sca_x, sca_y = dataloader.get_scaler_x_y()
+    train_y = sca_y.inverse_transform(train_y)
+    test_y = sca_y.inverse_transform(test_y)
+    predict_y = sca_y.inverse_transform(predict_y)
 
-        err_str = '{0},{1},{2},{3},{4}\n'.format(sequence_length, batch_size, epochs, mse, mape)
-        fo.write(str(err_str))
-        fo.flush()
+    mse = get_rmse(test_y, predict_y)
+    mape = get_mape(test_y, predict_y)
 
-        plotfilename = 'seqLen:{0}_batchsize:{1}_epochs:{2}_preMeasure:{3}_dropout:{4}'.format(sequence_length,
-                                                                                               batch_size, epochs,
-                                                                                               predict_measure, dropout)
-        title = plotfilename + '\nmse:{0}_mape:{1}'.format(mse, mape)
-        plot_and_save(title, sequence_length, plotfilename, all_y, test_x, test_y, train_y, predict_y)
+    err_str = '{0},{1},{2},{3},{4}\n'.format(sequence_length, batch_size, epochs, mse, mape)
+    fo.write(str(err_str))
+    fo.flush()
+
+    plotfilename = 'seqLen:{0}_batchsize:{1}_epochs:{2}_preMeasure:{3}_dropout:{4}'.format(sequence_length, batch_size,
+                                                                                           epochs, predict_measure,
+                                                                                           dropout)
+    title = plotfilename + '\nmse:{0}_mape:{1}'.format(mse, mape)
+    plot_and_save(title, sequence_length, plotfilename, all_y, test_x, test_y, train_y, predict_y)
 
     fo.close()
 

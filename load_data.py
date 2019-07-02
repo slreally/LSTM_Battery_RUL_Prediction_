@@ -41,7 +41,7 @@ class load_data():
             data.append(data_scalered[i: i + self.sequence_length ])
         reshaped_data = np.array(data).astype('float64')
 
-        random.shuffle(reshaped_data)
+        # random.shuffle(reshaped_data)
 
         train_x = reshaped_data[:, :, :-1]
         train_y = reshaped_data[:, len(reshaped_data[1]) - 1, -1:]##-2:-1

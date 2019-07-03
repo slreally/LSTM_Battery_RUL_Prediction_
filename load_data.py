@@ -1,17 +1,7 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler,MinMaxScaler
-from sklearn.metrics import mean_squared_error
-from keras.models import Sequential
-from keras.layers import LSTM, Dense, Activation,Dropout,Flatten
-import datetime
-import random
-import math
-import codecs
-import os.path as osp
-from numpy import newaxis
-import argparse
+from sklearn.externals import joblib
 
 class load_data():
     def __init__(self,filename,seq_len=50,split=0.3,usecols =[3, 4, 5, 6, 7, 8, 9, 10]):
@@ -33,7 +23,7 @@ class load_data():
         return train_x,train_y,test_x,test_y
 
     def get_train_x_y(self, data_train):
-        data_scalered = self.scaler_train_data(data_train)
+        data_scalered = self.scale_train_data(data_train)
         data = []
         for i in range(len(data_scalered) - self.sequence_length + 1):
             # data.append(data_scalered[i: i + self.sequence_length - 1])
@@ -47,7 +37,7 @@ class load_data():
         return train_x, train_y
 
     def get_test_x_y(self,data_test):
-        data_scalered = self.scaler_test_data(data_test)
+        data_scalered = self.scale_test_data(data_test)
         data = []
         for i in range(len(data_scalered) - self.sequence_length + 1):
             # data.append(data_scalered[i: i + self.sequence_length - 1])
@@ -58,14 +48,14 @@ class load_data():
         test_y = reshaped_data[:, len(reshaped_data[1]) - 1, -1:]
         return test_x, test_y
 
-    def scaler_train_data(self,data):
+    def scale_train_data(self, data):
         data_x = self.scaler_x.fit_transform(data[:, :-1])
         data_y = self.scaler_y.fit_transform(data[:, -1:]) #label不归一化
         # data_y =data[:,-1:]
         data_all = np.concatenate((data_x, data_y), axis=1)
         return data_all
 
-    def scaler_test_data(self,data_test):
+    def scale_test_data(self, data_test):
         data_x = self.scaler_x.transform(data_test[:,:-1])
         data_y = self.scaler_y.transform(data_test[:,-1:])
         # data_y = data_test[:, -1:]
@@ -77,6 +67,13 @@ class load_data():
 
     def get_all_y(self):
         return  self.data_all[:,-1:]
+
+    def load_scaler(file_path):
+        scalerx = joblib.load("saved_model/base_seqlen20_batchsize128_epoch1_features1x.scale")
+        scalery = joblib.load("saved_model/base_seqlen20_batchsize128_epoch1_features1y.scale")
+        return scalerx, scalery
+
+
 
 
 def main():

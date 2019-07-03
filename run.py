@@ -27,7 +27,7 @@ def train_base_model(seq_len,usecols,batch_size,epochs,split = 1):
 def main():
 
     parser = argparse.ArgumentParser(description='LSTM RUL Prediction')
-    parser.add_argument('--filename', type=str, default="data/2017_06_30_cell40_data.csv")
+    parser.add_argument('--filename', type=str, default="data/2017_06_30_cell47_data.csv")
     parser.add_argument('--output_path',type=str,default="snapshot/single_variable")
     parser.add_argument('--predict_measure', type=int, default=0, choices=[0,1])
     parser.add_argument('--sequence_length', type=int,default= 20)
@@ -38,11 +38,12 @@ def main():
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--dropout', default= 0.2)
     parser.add_argument('--saved_figure_path',default='result/single_variable/')
-    parser.add_argument('--feature_num',type=int,default= 7,
+    parser.add_argument('--feature_num',type=int,default= 1,
                         help='single feature use 1,multi use 7')
-    parser.add_argument('--usecols',default= [3, 4, 5, 6, 7, 8, 9, 10],
+    parser.add_argument('--usecols',default= [9, 10],type=int,nargs='+',
                         help='single feature imput use [9,10], multi use [3, 4, 5, 6, 7, 8, 9, 10]')
-    parser.add_argument('--get_model_measure',default= 0,
+    #必须设置type=int，否则脚本执行时会导致get_model返回None
+    parser.add_argument('--get_model_measure',default= 0,type=int,
                         help='0 for define model from begin, 1 for load exist model')
 
     args = parser.parse_args()
@@ -102,7 +103,7 @@ def main():
     fo.close()
 
 #当自定义模型时，需输入后边的三个变量
-def get_model(lstm, get_model_measure,sequence_length=0,feature_num=0,dropout_prob=0):
+def get_model(lstm,get_model_measure,sequence_length=0,feature_num=0,dropout_prob=0):
     if get_model_measure == 0: #define model by self.
         return lstm.build_model(sequence_length,feature_num,dropout_prob)
     elif get_model_measure ==1:#load model from file
@@ -115,4 +116,4 @@ def get_model(lstm, get_model_measure,sequence_length=0,feature_num=0,dropout_pr
 if __name__ == '__main__':
     # scalerx = joblib.load("saved_model/base_seqlen20_batchsize128_epoch1_features1x.scale")
     # train_base_model(20,[0,1],128,1,1)
-    # main()
+    main()

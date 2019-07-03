@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import datetime
+from sklearn.externals import joblib
 
 #save_filepath: 'result/single_variable/'
 def plot_and_save(title, sequence_length, save_filename,save_filepath, all_y, test_y, train_y, predict_y):
@@ -22,3 +23,8 @@ def plot_and_save(title, sequence_length, save_filename,save_filepath, all_y, te
 def get_time():
     time = datetime.datetime.now().strftime('%m-%d-%H-%R-%S')
     return time
+
+def load_scaler(file_path):
+    scalerx = joblib.load("saved_model/base_seqlen20_batchsize128_epoch1_features1x.scale")
+    scalery = joblib.load("saved_model/base_seqlen20_batchsize128_epoch1_features1y.scale")
+    return scalerx,scalery

@@ -2,7 +2,7 @@ from keras.models import Sequential,model_from_json
 from keras.layers import Dropout,LSTM,Dense,Activation
 import numpy as np
 
-
+#TODO:可优化成两个类似生成器的东西，一个自定义模型，一个通过已有模型导入
 class lstm():
     def __init__(self,seq_len,features_num,dropout_prob,units_num=50):
         self.seq_len = seq_len
@@ -11,19 +11,19 @@ class lstm():
         self.units_nums = units_num
 
 
-    def build_model(self,seq_len, features_num, dropout_prob=0.2, units_num=50):
+    def build_model(self):
         # input_dim是输入的train_x的最后一个维度，train_x的维度为(n_samples, time_steps, input_dim)
         model = Sequential()
-        model.add(LSTM(units=units_num, return_sequences=True, input_shape=(seq_len, features_num)))
+        model.add(LSTM(units= 50, return_sequences=True, input_shape=(self.seq_len, self.features_num)))
         print(model.layers)
-        model.add(Dropout(float(dropout_prob)))
-        model.add(LSTM(units=units_num))
-        model.add(Dropout(float(dropout_prob)))
+        model.add(Dropout(float(self.dropout_prob)))
+        model.add(LSTM(units= 50))
+        model.add(Dropout(float(self.dropout_prob)))
         model.add(Dense(units=1))
         model.add(Activation('linear', name='LSTMActivation'))
 
         model.compile(loss='mse', optimizer='rmsprop')
-        # model.summary()
+        model.summary()
         return model
 
     def train_model(self,model,train_x, train_y, batch_size, epochs):
@@ -39,6 +39,7 @@ class lstm():
 
     def predict(self,model,test_x,pre_way):
         predict = self.predict_way(model,test_x,way=pre_way)
+        return predict
 
 
     '''

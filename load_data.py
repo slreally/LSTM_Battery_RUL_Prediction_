@@ -12,7 +12,6 @@ import codecs
 import os.path as osp
 from numpy import newaxis
 import argparse
-import lstm_multi_variable as lstm
 
 class load_data():
     def __init__(self,filename,seq_len=50,split=0.3,usecols =[3, 4, 5, 6, 7, 8, 9, 10]):

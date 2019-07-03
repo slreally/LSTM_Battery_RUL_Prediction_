@@ -1,30 +1,31 @@
 from keras.models import Sequential,model_from_json
 from keras.layers import Dropout,LSTM,Dense,Activation
 import numpy as np
+from sklearn.externals import joblib
 
 #TODO:可优化成两个类似生成器的东西，一个自定义模型，一个通过已有模型导入
 class lstm():
-    def __init__(self,seq_len,features_num,dropout_prob,units_num=50):
-        self.seq_len = seq_len
-        self.features_num = features_num
-        self.dropout_prob = dropout_prob
-        self.units_nums = units_num
+    # def __init__(self,seq_len,features_num,dropout_prob,units_num=50):
+    #     self.seq_len = seq_len
+    #     self.features_num = features_num
+    #     self.dropout_prob = dropout_prob
+    #     self.units_nums = units_num
 
 
-    def build_model(self):
-        # input_dim是输入的train_x的最后一个维度，train_x的维度为(n_samples, time_steps, input_dim)
-        model = Sequential()
-        model.add(LSTM(units= 50, return_sequences=True, input_shape=(self.seq_len, self.features_num)))
-        print(model.layers)
-        model.add(Dropout(float(self.dropout_prob)))
-        model.add(LSTM(units= 50))
-        model.add(Dropout(float(self.dropout_prob)))
-        model.add(Dense(units=1))
-        model.add(Activation('linear', name='LSTMActivation'))
-
-        model.compile(loss='mse', optimizer='rmsprop')
-        model.summary()
-        return model
+    # def build_model(self):
+    #     # input_dim是输入的train_x的最后一个维度，train_x的维度为(n_samples, time_steps, input_dim)
+    #     model = Sequential()
+    #     model.add(LSTM(units= 50, return_sequences=True, input_shape=(self.seq_len, self.features_num)))
+    #     print(model.layers)
+    #     model.add(Dropout(float(self.dropout_prob)))
+    #     model.add(LSTM(units= 50))
+    #     model.add(Dropout(float(self.dropout_prob)))
+    #     model.add(Dense(units=1))
+    #     model.add(Activation('linear', name='LSTMActivation'))
+    #
+    #     model.compile(loss='mse', optimizer='rmsprop')
+    #     model.summary()
+    #     return model
 
     def train_model(self,model,train_x, train_y, batch_size, epochs):
 
@@ -83,5 +84,16 @@ class lstm():
         print('loaded model from disk')
         loaded_model.compile(loss='mse', optimizer='rmsprop')
         return loaded_model
+
+    def save_model(self,model,save_path,scale_x,scale_y):
+        model_json = model.to_json()
+        with open(save_path+".json" , "w") as f:#.json
+            f.write(model_json)
+        joblib.dump(scale_x,save_path+"x.scale")
+        joblib.dump(scale_y,save_path+"y.scale")
+        model.save_weights(save_path+".h5")#.h5
+
+
+
 
 

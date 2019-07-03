@@ -7,6 +7,22 @@ import loss
 from utils import plot_and_save,get_time
 import load_data
 import lstm_model
+import lstm_network
+from sklearn.externals import joblib
+
+def train_base_model(seq_len,usecols,batch_size,epochs,split = 1):
+    filename = "multi_battery/cells_single_input.csv"
+    dataloader = load_data.load_data(filename,seq_len,split,usecols)
+    train_x,train_y = dataloader.get_train_x_y(dataloader.data_all)
+    train_x = np.reshape(train_x, (train_x.shape[0], train_x.shape[1], len(usecols)-1))
+
+    model = lstm_network.lstm_network().build_network(seq_len,len(usecols)-1)
+    lstm = lstm_model.lstm()
+    model = lstm.train_model(model,train_x,train_y,batch_size,epochs)
+    save_path="saved_model/base_seqlen{0}_batchsize{1}_epoch{2}_features{3}" \
+              "".format(seq_len,batch_size,epochs,len(usecols)-1)
+    scale_x,scale_y = dataloader.get_scaler_x_y()
+    lstm.save_model(model,save_path,scale_x,scale_y)
 
 def main():
 
@@ -61,8 +77,8 @@ def main():
     test_x = np.reshape(test_x, (test_x.shape[0], test_x.shape[1], feature_num))
     print(train_y.shape)
 
-    lstm = lstm_model.lstm(sequence_length,feature_num,dropout_prob)
-    model = get_model(lstm, get_model_measure)
+    lstm = lstm_model.lstm()
+    model = get_model(lstm, get_model_measure,sequence_length,feature_num,dropout_prob)
     lstm.train_model(model,train_x,train_y,batch_size,epochs)
     predict_y = lstm.predict(model,test_x,pre_way=predict_measure)
 
@@ -85,10 +101,10 @@ def main():
     plot_and_save(title,sequence_length,plotfilename,save_filepath,all_y,test_y,train_y,predict_y)
     fo.close()
 
-
-def get_model(lstm, get_model_measure):
+#当自定义模型时，需输入后边的三个变量
+def get_model(lstm, get_model_measure,sequence_length=0,feature_num=0,dropout_prob=0):
     if get_model_measure == 0: #define model by self.
-        return lstm.build_model()
+        return lstm.build_model(sequence_length,feature_num,dropout_prob)
     elif get_model_measure ==1:#load model from file
         json_filepath = 'multi_battery/batch_size:32_epochs:50_premeas:0.json'
         model_weight_filepath= 'multi_battery/batch_size:32_epochs:50_premeas:0.h5'
@@ -97,5 +113,6 @@ def get_model(lstm, get_model_measure):
         return None
 
 if __name__ == '__main__':
-
-    main()
+    # scalerx = joblib.load("saved_model/base_seqlen20_batchsize128_epoch1_features1x.scale")
+    # train_base_model(20,[0,1],128,1,1)
+    # main()
